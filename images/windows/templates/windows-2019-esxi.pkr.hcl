@@ -13,7 +13,7 @@ variable "agent_tools_directory" {
 
 variable "helper_script_folder" {
   type    = string
-  default = "C:\\Program Files\\WindowsPowerShell\\Modules"
+  default = "C:\\Program Files\\WindowsPowerShell\\Modules\\"
 }
 
 variable "image_folder" {
@@ -23,7 +23,7 @@ variable "image_folder" {
 
 variable "image_os" {
   type    = string
-  default = "win22"
+  default = "win19"
 }
 
 variable "image_version" {
@@ -163,7 +163,7 @@ build {
       "Move-Item '${var.image_folder}\\scripts\\tests\\Helpers.psm1' '${var.helper_script_folder}\\TestsHelpers\\TestsHelpers.psm1'",
       "Move-Item '${var.image_folder}\\scripts\\tests' '${var.image_folder}\\tests'",
       "Remove-Item -Recurse '${var.image_folder}\\scripts'",
-      "Move-Item '${var.image_folder}\\toolsets\\toolset-2022.json' '${var.image_folder}\\toolset.json'",
+      "Move-Item '${var.image_folder}\\toolsets\\toolset-2019.json' '${var.image_folder}\\toolset.json'",
       "Remove-Item -Recurse '${var.image_folder}\\toolsets'"
     ]
   }
@@ -188,6 +188,17 @@ build {
   }
 
   provisioner "powershell" {
+    elevated_password = "${var.install_password}"
+    elevated_user     = "${var.install_user}"
+    scripts           = ["${path.root}/../scripts/build/Install-NET48.ps1"]
+    valid_exit_codes  = [0, 3010]
+  }
+
+  provisioner "windows-restart" {
+    restart_timeout = "10m"
+  }
+
+  provisioner "powershell" {
     environment_vars = ["IMAGE_VERSION=${var.image_version}", "IMAGE_OS=${var.image_os}", "AGENT_TOOLSDIRECTORY=${var.agent_tools_directory}", "IMAGEDATA_FILE=${var.imagedata_file}", "IMAGE_FOLDER=${var.image_folder}"]
     execution_policy = "unrestricted"
     scripts          = [
@@ -204,9 +215,7 @@ build {
   }
 
   provisioner "windows-restart" {
-    check_registry        = true
-    restart_check_command = "powershell -command \"& {while ( (Get-WindowsOptionalFeature -Online -FeatureName Containers -ErrorAction SilentlyContinue).State -ne 'Enabled' ) { Start-Sleep 30; Write-Output 'InProgress' }}\""
-    restart_timeout       = "10m"
+    restart_timeout = "30m"
   }
 
   provisioner "powershell" {
@@ -216,6 +225,7 @@ build {
   provisioner "powershell" {
     environment_vars = ["IMAGE_FOLDER=${var.image_folder}"]
     scripts          = [
+      "${path.root}/../scripts/build/Install-VCRedist.ps1",
       "${path.root}/../scripts/build/Install-Docker.ps1",
       "${path.root}/../scripts/build/Install-DockerWinCred.ps1",
       "${path.root}/../scripts/build/Install-DockerCompose.ps1",
@@ -226,7 +236,7 @@ build {
   }
 
   provisioner "windows-restart" {
-    restart_timeout = "30m"
+    restart_timeout = "10m"
   }
 
   provisioner "powershell" {
@@ -235,18 +245,13 @@ build {
     environment_vars  = ["IMAGE_FOLDER=${var.image_folder}"]
     scripts           = [
       "${path.root}/../scripts/build/Install-VisualStudio.ps1",
-      "${path.root}/../scripts/build/Install-KubernetesTools.ps1"
+      "${path.root}/../scripts/build/Install-KubernetesTools.ps1",
+      "${path.root}/../scripts/build/Install-NET48-devpack.ps1"
     ]
     valid_exit_codes  = [0, 3010]
   }
 
-  provisioner "windows-restart" {
-    check_registry  = true
-    restart_timeout = "10m"
-  }
-
   provisioner "powershell" {
-    pause_before     = "2m0s"
     environment_vars = ["IMAGE_FOLDER=${var.image_folder}"]
     scripts          = [
       "${path.root}/../scripts/build/Install-Wix.ps1",
@@ -316,29 +321,29 @@ build {
       "${path.root}/../scripts/build/Install-Mercurial.ps1",
       "${path.root}/../scripts/build/Install-Zstd.ps1",
       "${path.root}/../scripts/build/Install-NSIS.ps1",
+      "${path.root}/../scripts/build/Install-CloudFoundryCli.ps1",
       "${path.root}/../scripts/build/Install-Vcpkg.ps1",
       "${path.root}/../scripts/build/Install-PostgreSQL.ps1",
       "${path.root}/../scripts/build/Install-Bazel.ps1",
       "${path.root}/../scripts/build/Install-AliyunCli.ps1",
       "${path.root}/../scripts/build/Install-RootCA.ps1",
       "${path.root}/../scripts/build/Install-MongoDB.ps1",
+      "${path.root}/../scripts/build/Install-GoogleCloudCLI.ps1",
       "${path.root}/../scripts/build/Install-CodeQLBundle.ps1",
-      "${path.root}/../scripts/build/Configure-Diagnostics.ps1"
-    ]
-  }
-
-  provisioner "powershell" {
-    elevated_password = "${var.install_password}"
-    elevated_user     = "${var.install_user}"
-    environment_vars  = ["IMAGE_FOLDER=${var.image_folder}"]
-    scripts           = [
-      "${path.root}/../scripts/build/Install-WindowsUpdates.ps1",
+      "${path.root}/../scripts/build/Install-BizTalkBuildComponent.ps1",
+      "${path.root}/../scripts/build/Configure-Diagnostics.ps1",
       "${path.root}/../scripts/build/Configure-DynamicPort.ps1",
       "${path.root}/../scripts/build/Configure-GDIProcessHandleQuota.ps1",
       "${path.root}/../scripts/build/Configure-Shell.ps1",
       "${path.root}/../scripts/build/Configure-DeveloperMode.ps1",
       "${path.root}/../scripts/build/Install-LLVM.ps1"
     ]
+  }
+
+  provisioner "powershell" {
+    elevated_password = "${var.install_password}"
+    elevated_user     = "${var.install_user}"
+    scripts           = ["${path.root}/../scripts/build/Install-WindowsUpdates.ps1"]
   }
 
   provisioner "windows-restart" {
@@ -370,7 +375,7 @@ build {
   }
 
   provisioner "file" {
-    destination = "${path.root}/../Windows2022-Readme.md"
+    destination = "${path.root}/../Windows2019-Readme.md"
     direction   = "download"
     source      = "C:\\software-report.md"
   }
@@ -398,7 +403,7 @@ build {
   provisioner "powershell" {
     inline = [
       "if( Test-Path $env:SystemRoot\\System32\\Sysprep\\unattend.xml ){ rm $env:SystemRoot\\System32\\Sysprep\\unattend.xml -Force}",
-      "& $env:SystemRoot\\System32\\Sysprep\\Sysprep.exe /oobe /generalize /mode:vm /quiet /quit",
+      "& $env:SystemRoot\\System32\\Sysprep\\Sysprep.exe /oobe /generalize /quiet /quit",
       "while($true) { $imageState = Get-ItemProperty HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Setup\\State | Select ImageState; if($imageState.ImageState -ne 'IMAGE_STATE_GENERALIZE_RESEAL_TO_OOBE') { Write-Output $imageState.ImageState; Start-Sleep -s 10 } else { break } }"
     ]
   }

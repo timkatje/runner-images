@@ -19,19 +19,19 @@ Function Get-PackerTemplatePath {
     switch ($ImageType) {
         # Note: Double Join-Path is required to support PowerShell 5.1
         ([ImageType]::Windows2019) {
-            $relativeTemplatePath = Join-Path (Join-Path "windows" "templates") "windows-2019.pkr.hcl"
+            $relativeTemplatePath = Join-Path (Join-Path "windows" "templates") "windows-2019-esxi.pkr.hcl"
         }
         ([ImageType]::Windows2022) {
-            $relativeTemplatePath = Join-Path (Join-Path "windows" "templates") "windows-2022.pkr.hcl"
+            $relativeTemplatePath = Join-Path (Join-Path "windows" "templates") "windows-2022-esxi.pkr.hcl"
         }
         ([ImageType]::Ubuntu2004) {
-            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "ubuntu-20.04.pkr.hcl"
+            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "ubuntu-20.04-esxi.pkr.hcl"
         }
         ([ImageType]::Ubuntu2204) {
-            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "ubuntu-22.04.pkr.hcl"
+            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "ubuntu-22.04-esxi.pkr.hcl"
         }
         ([ImageType]::UbuntuMinimal) {
-            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "ubuntu-minimal.pkr.hcl"
+            $relativeTemplatePath = Join-Path (Join-Path "ubuntu" "templates") "ubuntu-minimal-esxi.pkr.hcl"
         }
         default { throw "Unknown type of image" }
     }

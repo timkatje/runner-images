@@ -1,5 +1,5 @@
 packer {
-  //Need vmware plugin here, either vmware-iso or vsphere-iso
+//Need vmware plugin here
 }
 
 locals {
@@ -28,7 +28,7 @@ variable "image_folder" {
 
 variable "image_os" {
   type    = string
-  default = "ubuntu20"
+  default = "ubuntu22"
 }
 
 variable "image_version" {
@@ -52,90 +52,7 @@ variable "install_password" {
   sensitive = true
 }
 
-variable "builder_host" {
-  type    = string
-  default = ""
-}
-
-variable "builder_host_username" {
-  type    = string
-  default = ""
-}
-
-variable "builder_host_password" {
-  type    = string
-  default = ""
-  sensitive = true
-}
-
-variable "builder_host_datastore" {
-  type    = string
-  default = ""
-}
-
-variable "builder_host_portgroup" {
-  type    = string
-  default = ""
-}
-
-variable "builder_host_output_dir" {
-  type    = string
-  default = ""
-}
-
-variable "dockerhub_login" {
-  type    = string
-  default = ""
-}
-
-variable "dockerhub_password" {
-  type    = string
-  default = ""
-  sensitive = true
-}
-
-variable "iso_local_path" {
-  type    = string
-  default = ""
-}
-
-variable "iso_checksum" {
-  type    = string
-  default = ""
-}
-
-variable "numvcpus" {
-  type    = string
-  default = "4"
-}
-
-variable "ramsize" {
-  type    = string
-  default = "16384"
-}
-
-variable "vm_name" {
-  type    = string
-  default = ""
-}
-
-variable "ovftool_deploy_vcenter" {
-  type    = string
-  default = ""
-}
-
-variable "ovftool_deploy_vcenter_username" {
-  type    = string
-  default = ""
-}
-
-variable "ovftool_deploy_vcenter_password" {
-  type    = string
-  default = ""
-  sensitive = true
-}
-
-// Need vmware source section here
+// Need vmware source section added here
 
 build {
   sources = ["source.azure-arm.build_image"]
@@ -191,7 +108,7 @@ build {
 
   provisioner "file" {
     destination = "${var.installer_script_folder}/toolset.json"
-    source      = "${path.root}/../toolsets/toolset-2004.json"
+    source      = "${path.root}/../toolsets/toolset-2204.json"
   }
 
   provisioner "shell" {
@@ -211,7 +128,7 @@ build {
   provisioner "shell" {
     environment_vars = ["IMAGE_VERSION=${var.image_version}", "IMAGE_OS=${var.image_os}", "HELPER_SCRIPTS=${var.helper_script_folder}"]
     execute_command  = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    scripts          = ["${path.root}/../scripts/build/configure-environment-esxi.sh"]
+    scripts          = ["${path.root}/../scripts/build/configure-environment.sh"]
   }
 
   provisioner "shell" {
@@ -252,7 +169,6 @@ build {
       "${path.root}/../scripts/build/install-codeql-bundle.sh",
       "${path.root}/../scripts/build/install-container-tools.sh",
       "${path.root}/../scripts/build/install-dotnetcore-sdk.sh",
-      "${path.root}/../scripts/build/install-erlang.sh",
       "${path.root}/../scripts/build/install-firefox.sh",
       "${path.root}/../scripts/build/install-microsoft-edge.sh",
       "${path.root}/../scripts/build/install-gcc-compilers.sh",
@@ -264,7 +180,6 @@ build {
       "${path.root}/../scripts/build/install-google-cloud-cli.sh",
       "${path.root}/../scripts/build/install-haskell.sh",
       "${path.root}/../scripts/build/install-heroku.sh",
-      "${path.root}/../scripts/build/install-hhvm.sh",
       "${path.root}/../scripts/build/install-java-tools.sh",
       "${path.root}/../scripts/build/install-kubernetes-tools.sh",
       "${path.root}/../scripts/build/install-oc-cli.sh",
@@ -280,7 +195,6 @@ build {
       "${path.root}/../scripts/build/install-nodejs.sh",
       "${path.root}/../scripts/build/install-bazel.sh",
       "${path.root}/../scripts/build/install-oras-cli.sh",
-      "${path.root}/../scripts/build/install-phantomjs.sh",
       "${path.root}/../scripts/build/install-php.sh",
       "${path.root}/../scripts/build/install-postgresql.sh",
       "${path.root}/../scripts/build/install-pulumi.sh",
@@ -294,7 +208,6 @@ build {
       "${path.root}/../scripts/build/install-packer.sh",
       "${path.root}/../scripts/build/install-vcpkg.sh",
       "${path.root}/../scripts/build/configure-dpkg.sh",
-      "${path.root}/../scripts/build/install-mongodb.sh",
       "${path.root}/../scripts/build/install-yq.sh",
       "${path.root}/../scripts/build/install-android-sdk.sh",
       "${path.root}/../scripts/build/install-pypy.sh",
@@ -347,19 +260,12 @@ build {
   }
 
   provisioner "shell" {
-    environment_vars    = ["IMAGE_VERSION=${var.image_version}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
-    inline              = [
-      "pwsh -Command Write-Host Running Generate-SoftwareReport.ps1 script",
-      "pwsh -File ${var.image_folder}/SoftwareReport/Generate-SoftwareReport.ps1 -OutputDirectory ${var.image_folder}",
-      "pwsh -Command Write-Host Running RunAll-Tests.ps1 script",
-      "pwsh -File ${var.image_folder}/tests/RunAll-Tests.ps1 -OutputDirectory ${var.image_folder}"
-    ]
-    max_retries         = "3"
-    start_retry_timeout = "2m"
+    environment_vars = ["IMAGE_VERSION=${var.image_version}", "INSTALLER_SCRIPT_FOLDER=${var.installer_script_folder}"]
+    inline           = ["pwsh -File ${var.image_folder}/SoftwareReport/Generate-SoftwareReport.ps1 -OutputDirectory ${var.image_folder}", "pwsh -File ${var.image_folder}/tests/RunAll-Tests.ps1 -OutputDirectory ${var.image_folder}"]
   }
 
   provisioner "file" {
-    destination = "${path.root}/../Ubuntu2004-Readme.md"
+    destination = "${path.root}/../Ubuntu2204-Readme.md"
     direction   = "download"
     source      = "${var.image_folder}/software-report.md"
   }
@@ -378,12 +284,17 @@ build {
 
   provisioner "file" {
     destination = "/tmp/"
-    source      = "${path.root}/../assets/ubuntu2004.conf"
+    source      = "${path.root}/../assets/ubuntu2204.conf"
   }
 
   provisioner "shell" {
     execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
-    inline          = ["mkdir -p /etc/vsts", "cp /tmp/ubuntu2004.conf /etc/vsts/machine_instance.conf"]
+    inline          = ["mkdir -p /etc/vsts", "cp /tmp/ubuntu2204.conf /etc/vsts/machine_instance.conf"]
+  }
+
+  provisioner "shell" {
+    execute_command = "sudo sh -c '{{ .Vars }} {{ .Path }}'"
+    inline          = ["sleep 30", "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"]
   }
 
 }
